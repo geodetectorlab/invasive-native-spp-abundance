@@ -1,0 +1,110 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(tibble)
+```
+
+
+```{r}
+data = read.csv(file.choose())
+```
+
+
+```{r}
+#The data was upload using the R script and then it was filtered the select some necessary parameters/columns from the original data and now named invasive. The columns selected are species, plot_id, family, and the frequency.
+
+# And here is R script has well to run the above step
+
+
+invasive_1 = select(data, species, plot_id, family, Occurrence, )
+
+invasive = data %>% pivot_wider(
+        names_from = species,
+        values_from = Occurrence,
+        values_fill = 0,
+)
+attach(data)
+invasive = select(invasive, -c(family,Host.Native.Country.,Invasive,References,Latitude..N., Longititude..E.))
+
+
+invasie = select(invasive, - plot_id)
+invasive = mutate(invasive, feqCount = rowSums(invasie))
+write.csv(invasive, file = "Invasive3 Count Occurrence.csv")
+# frequency = (No of quadrates of occurrence of species/ Total no of studied plot) * 100 according to literature in which they use the frequency as the number of occurrence.
+# Density = Total no of individuals of a species in all quadrates / Total no of quadrates studies
+# Abundance = Total no of individuals of a species in all quadrates / Total of quadrates in which species occured
+# Relative Frequency = Frequency of the species / Frequency of all species
+# Relative Density = Density of species / Density of all species
+# All these formula above are extracted from the previous literature on assessment of invasive species "Sheneto 2016"
+
+
+
+invasive = mutate(invasive, Frequnecy = (feqCount/15)*100)
+
+density_inv = mutate(invasive, density = (feqCount/15))
+
+invasive_analytics = mutate(density_inv,
+                            RF = (feqCount/sum(feqCount))*100)
+
+invasive_analytics = mutate(invasive_analytics, 
+                            RD = (density/sum(density))*100)
+
+
+invasive_analytics = mutate(invasive_analytics, abundance = feqCount/colSums(invasie))
+
+
+
+# Here the simpson Index and Shannon weiner diversity was calculated scratch scripting in R and are as follows
+
+invasive_analytics = mutate(invasive_analytics, 
+                       proportion.in.plots = feqCount/sum(feqCount))
+
+
+invasive_analytics = mutate(invasive_analytics,
+                       D = 1/sum(proportion.in.plots^2))
+
+invasive_analytics = mutate(invasive_analytics,
+                        H =  (proportion.in.plots)*log(proportion.in.plots))
+```
+
+
+```{r}
+library(ggplot2)
+attach(invasive_analytics)
+ggplot(invasive_analytics, aes(x= H), color = fedCounts)+
+  geom_histogram(color="darkblue", fill="lightblue")
+```
+
+
+```{r}
+write.table(invasive_analytics, file = "Invasive2 (native species proportion) analysis Scratch.csv", 
+            sep = ",")
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
